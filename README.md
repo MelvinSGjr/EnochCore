@@ -21,7 +21,7 @@ graph TD
     B --> H[User Shell]
     B --> I[Init System]
     I --> I1[OpenRC]
-    I --> I2[systemd (optional)]
+    I --> I2[systemd that optional]
     B --> J[BusyBox Utilities]
     C --> K[Loadable Modules]
     K --> L[ext2]

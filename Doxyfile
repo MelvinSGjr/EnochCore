@@ -1,0 +1,16 @@
+# Doxyfile for EnochCore
+PROJECT_NAME           = "EnochCore Modular OS"
+OUTPUT_DIRECTORY       = docs
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+RECURSIVE              = YES
+INPUT                  = src/
+FILE_PATTERNS          = *.c *.h
+QUIET                  = NO
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DOT_IMAGE_FORMAT       = svg
+GENERATE_TREEVIEW      = YES
+FULL_PATH_NAMES        = NO 

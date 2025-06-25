@@ -5,6 +5,8 @@ EnochCore is a modular, extensible, and lightweight operating system for x86_64.
 
 **I made this using a [malwarepad](https://github.com/malwarepad)'s tutorial on [YouTube](https://www.youtube.com/watch?v=vjkiPU6QcWw)**
 
+*All files will be available in the release*
+
 ---
 
 ## Architecture Diagram

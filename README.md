@@ -1,7 +1,10 @@
 # EnochCore Modular Operating System
 
 ## Overview
-EnochCore is a modular, extensible, and lightweight operating system (***THIS IS NOT LINUX OR BSD (Only Kernel based on BSD files)***) for x86_64. It is designed for clarity, hackability, and community-driven development. EnochCore uses standard, efficient components and is easy to fork and extend.
+EnochCore is a modular, extensible, and lightweight operating system (***THIS IS NOT LINUX OR BSD (Only Kernel based on BSD files)***) x86_64 POSIX-compliant operating system in C. It is designed for clarity, hackability, and community-driven development. EnochCore uses standard, efficient components and is easy to fork and extend
+
+## Kernel
+The EnochCore kernel is a monolithic x86_64 one written in relatively simple C with a few bits of Intel assembly here and there. It uses the Limine bootloader and leverages the FAT32 filesystem for booting along with Ext2 for the root partition.
 
 **I made this using a [malwarepad](https://github.com/malwarepad)'s tutorial on [YouTube](https://www.youtube.com/watch?v=vjkiPU6QcWw)**
 

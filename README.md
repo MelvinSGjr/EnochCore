@@ -1,242 +1,129 @@
-# EnochCore Modular Operating System
+# EnochCore
 
-## Overview
-EnochCore is a modular, extensible, and lightweight operating system (***THIS IS NOT LINUX OR BSD (Only Kernel based on BSD files)***) x86_64 POSIX-compliant operating system in C. It is designed for clarity, hackability, and community-driven development. EnochCore uses standard, efficient components and is easy to fork and extend
+EnochCore is a minimal, x86_64 POSIX-like operating system written in C. This project is for those who want to understand how an OS works from the ground up. No magic, no bloat, just code and documentation. Designed and maintained by MelvinSGjr.
 
-## Kernel
-The EnochCore kernel is a monolithic x86_64 one written in relatively simple C with a few bits of Intel assembly here and there. It uses the Limine bootloader and leverages the FAT32 filesystem for booting along with Ext2 for the root partition.
+*Digital folklore claims that EnochCore is an effort to replicate the "god system" - it is straightforward, fast, and uncomplicated. The ancient book about secret knowledge, the Book of Enoch, is referenced in the name. However, we are building an instrument rather than a temple, in contrast to the mystics of the past.*
 
-**I made this using a [malwarepad](https://github.com/malwarepad)'s tutorial on [YouTube](https://www.youtube.com/watch?v=vjkiPU6QcWw)**
-
-*All files will be available in the release*
+**Origin:** EnochCore is based on the original source code of CavOS.
 
 ---
 
-## Architecture Diagram
+## System Overview
 
+EnochCore is built to be transparent, hackable, and easy to reason about. The system is monolithic, with a clear separation between kernel and userspace. Every subsystem is implemented with simplicity and clarity in mind.
+
+### Boot Process
+- The system boots via the Limine bootloader, which loads the kernel into memory and passes control to the entry point (`_start`).
+- Early initialization sets up serial output, parses bootloader data, and prepares the framebuffer for console output.
+
+### Kernel Initialization
+- **Memory Management:**
+  - Physical (PMM) and virtual (VMM) memory managers are initialized first.
+  - Paging is set up for process isolation and kernel protection.
+- **CPU & Interrupts:**
+  - GDT, IDT, and ISR handlers are installed.
+  - APIC and ACPI are configured for multiprocessor and power management support.
+- **Drivers:**
+  - PCI bus is scanned and device drivers are loaded: AHCI (SATA), PS/2 keyboard/mouse, serial ports, VGA, framebuffer, and network cards (e1000, rtl8139, rtl8169, ne2k).
+- **Filesystems:**
+  - Virtual filesystems are mounted: `/dev`, `/`, `/boot`, `/sys`, `/proc`.
+  - FAT32 and ext2 are supported for persistent storage.
+- **Graphics:**
+  - Console output is available via VGA and framebuffer, with ANSI color and basic font rendering.
+- **Syscalls & Multitasking:**
+  - Linux-like syscall layer is initialized for userspace communication.
+  - Pre-emptive multitasking and process/thread management are enabled.
+- **Networking:**
+  - lwIP stack provides full TCP/IP support (IPv4/IPv6, PPP, Ethernet).
+- **Userland Launch:**
+  - After all subsystems are ready, `/bin/bash` is launched as the first user process.
+
+### Userspace
+- User programs are loaded as ELF64 binaries.
+- Musl libc is used for standard C library support.
+- All userspace programs interact with the kernel via syscalls.
+- Example programs: shell, test utilities, graphics demos.
+
+---
+
+## Architecture Diagrams
+
+### Boot & Kernel Init
 ```mermaid
-graph TD
-    A[Limine Bootloader] --> B[EnochCore Kernel 0.01]
-    B --> C[Module Loader]
-    B --> D[Filesystem Layer]
-    D --> D1[FAT32 Boot]
-    D --> D2[Ext2 Root]
-    B --> E[Memory Management]
-    E --> E1[Paging]
-    E --> E2[Virtual Memory]
-    B --> F[Preemptive Scheduler]
-    B --> G[Device Drivers]
-    G --> G1[VGA/Graphics]
-    G --> G2[Network Stack]
-    G --> G3[Storage Drivers]
-    G --> G4[NVIDIA GPU Auto-Detection]
-    B --> H[System Calls]
-    B --> I[Process Management]
-    B --> J[Userland Interface]
-    J --> J1[musl libc]
-    J --> J2[POSIX Stub Layer]
-    J --> J3[KDE Plasma Desktop]
-    J --> J4[KScreenLocker]
-    B --> K[Network Stack]
-    K --> K1[lwIP Integration]
-    B --> L[BusyBox Utilities]
-    C --> M[Loadable Modules]
-    M --> M1[ext2]
-    M --> M2[ne2k]
-    M --> M3[vga]
-    M --> M4[char_device]
-    M --> M5[hello]
+flowchart TD
+    A["Bootloader (Limine)"] --> B["Kernel Entry (_start)"]
+    B --> C["Memory Management"]
+    C --> D["CPU Setup"]
+    D --> E["Drivers"]
+    E --> F["Filesystem Mounts"]
+    F --> G["Syscalls & Multitasking"]
+    G --> H["Networking"]
+    H --> I["Userland Launch"]
 ```
 
----
-
-## Lightweight by Design
-- Uses [Musl libc](https://musl.libc.org/) for minimal and fast C library support (adapted for EnochCore).
-- Init system: [OpenRC](https://github.com/OpenRC/openrc) (default), with optional systemd support.
-- Core utilities provided by [BusyBox 1.36](https://busybox.net/).
-- Modular, minimal kernel and userland.
-- **KDE Plasma Desktop** - Full graphical environment ported from FreeBSD.
-- **NVIDIA GPU Support** - Auto-detection for RTX/GTX series with legacy driver support.
-
----
-
-## Build & System Management Tool
-- EnochCore includes a build and management tool inspired by pmbootstrap.
-- Features:
-  - Automated cross-compilation of packages
-  - Image generation for various devices
-  - Chroot environment management
-  - Easy configuration and scripting
-  - **Cross-compilation toolchain**: x86_64-enochcore-gcc
-
-**Example usage:**
-```sh
-export PATH="$HOME/opt/cross/bin:$PATH"
-make clean
-make -j$(nproc)
-make install
-```
-
----
-
-## Modular Structure
-```
-src/
-├── kernel/         # Core kernel code
-│   ├── memory/     # Memory management (paging, vmm, malloc)
-│   ├── drivers/    # Device drivers
-│   │   ├── gpu/    # Graphics drivers (VGA, NVIDIA)
-│   │   ├── nics/   # Network interface cards
-│   │   └── disk/   # Storage drivers
-│   ├── networking/ # Network stack (lwIP)
-│   ├── filesystems/# File systems (FAT32, Ext2)
-│   ├── modules/    # Loadable kernel modules
-│   └── syscalls/   # System call interface
-├── desktop/        # Desktop environment
-│   ├── kde/        # KDE Plasma (ported)
-│   └── kscreenlocker/ # Screen locking
-├── libs/           # Libraries
-│   └── musl_enochcore/ # Adapted musl libc
-├── software/       # User applications
-│   ├── calculator/ # Calculator app
-│   ├── logic_designer/ # Logic designer
-│   ├── busybox/    # BusyBox utilities
-│   └── test/       # Test applications
-├── init/           # Init system scripts (OpenRC, systemd)
-└── tools/          # Build and development tools
-```
-
----
-
-## Init System
-- Default: OpenRC for fast, parallel service startup.
-- Optional: systemd support for advanced service management.
-- All init scripts are in `src/init/`.
-
----
-
-## BusyBox Utilities
-- BusyBox 1.36 provides standard userland tools (ls, cp, sh, etc.) in a single binary.
-- Located in `src/software/busybox/`.
-
----
-
-## Desktop Environment
-- **KDE Plasma** - Full desktop environment ported from FreeBSD
-- **KScreenLocker** - Screen locking mechanism integrated with KDE
-- Located in `src/desktop/`.
-
----
-
-## GPU Support
-- **NVIDIA Auto-Detection** - Automatically detects RTX 3060 Ti, RTX 3070, RTX 3080, RTX 3090
-- **Legacy Support** - GTX 1660, GTX 1070, GTX 1080 with legacy drivers
-- **Driver Management** - Automatic driver selection based on GPU detection
-- Located in `src/kernel/drivers/gpu/`.
-
----
-
-## Shell Interface
-- Minimal text shell for user interaction.
-- Entry point: `void shell_main(void);`
-- Supports basic command parsing (e.g., `help`, `exit`).
-- Easily extensible for custom commands.
-
----
-
-## API Documentation
-- All public APIs (drivers, FS, IPC, etc.) are documented in Doxygen format.
-- To generate HTML docs and architecture diagrams:
-
-```sh
-doxygen Doxyfile
-# Output: docs/html/index.html (with Graphviz diagrams)
-```
-
----
-
-## How to Fork and Extend EnochCore
-
-### 1. Fork the repository
-- Use the GitHub interface to fork EnochCore.
-
-### 2. Add a new module
-```sh
-cd src/kernel/modules/
-mkdir my_driver
-cd my_driver
-echo 'obj-m += my_driver.o' > Kbuild
-touch my_driver.c
-```
-
-### 3. Implement module initialization
-```c
-#include <module.h>
-MODULE_INIT(my_init);
-void my_init(void) {
-    // Your driver code here
-}
-```
-
-### 4. Build and configure
-```sh
-export PATH="$HOME/opt/cross/bin:$PATH"
-make clean
-make -j$(nproc)
-```
-
-### 5. Test in QEMU/VirtualBox or on real hardware
-```sh
-qemu-system-x86_64 -kernel build/enochcore.elf
-# Or flash to your device
-```
-
-### 6. Contribute back
-- Open a pull request with your module and documentation.
-- Follow code style and Doxygen documentation rules.
-
----
-
-## Example: Creating a Driver (VGA)
-
-```c
-/**
- * @file vga.c
- * @brief VGA driver
- * @example
- * vga_putchar('X'); // Print character
- */
-void vga_putchar(char c) {
-    // Output a character to the VGA text buffer
-}
-```
-
----
-
-## Workflow Diagram: Module Development
-
+### Userspace & Syscalls
 ```mermaid
-graph TD
-    A[Clone/Fork EnochCore] --> B[Setup Cross-Compilation Toolchain]
-    B --> C[Create Module Directory]
-    C --> D[Write Module Code]
-    D --> E[Add to Makefile]
-    E --> F[Build with x86_64-enochcore-gcc]
-    F --> G[Test in QEMU/VirtualBox or Hardware]
-    G --> H[Contribute Back]
+flowchart TD
+    I["Userland Launch (/bin/bash)"] --> J["User Programs"]
+    J -- "Syscalls" --> G["Syscalls & Multitasking"]
 ```
 
 ---
 
-## Version Information
-- **Current Version**: 0.01
-- **Kernel**: Monolithic x86_64
-- **Bootloader**: Limine
-- **Filesystems**: FAT32 (boot), Ext2 (root)
-- **Desktop**: KDE Plasma
-- **C Library**: musl libc (adapted)
-- **GPU Support**: NVIDIA (auto-detection)
-- **Network**: lwIP stack
-- **Build System**: GNU Make
+## Subsystems Explained
 
-Created by MelvinSGjr (GitHub)
+### Memory Management
+- PMM manages physical frames, VMM handles virtual address spaces.
+- Paging is used for isolation and protection.
+- Custom malloc implementation for kernel and user allocations.
+
+### CPU & Interrupts
+- GDT/IDT set up segment and interrupt descriptors.
+- ISRs handle exceptions and hardware interrupts.
+- APIC/ACPI for SMP and power management.
+
+### Drivers
+- PCI bus scanning and device enumeration.
+- AHCI for SATA disks, PS/2 for keyboard/mouse, serial for debug.
+- VGA and framebuffer for graphics output.
+- Network: e1000, rtl8139, rtl8169, ne2k.
+
+### Filesystems
+- VFS layer abstracts all filesystems.
+- FAT32 and ext2 for persistent storage.
+- /dev, /proc, /sys as virtual filesystems for device and system info.
+
+### Graphics
+- Console output via VGA and framebuffer.
+- ANSI color, PSF font rendering.
+
+### Syscalls & Multitasking
+- Linux-like syscall ABI for compatibility.
+- Pre-emptive multitasking, process and thread management.
+- Signals, pipes, futexes, eventfds, Unix sockets.
+
+### Networking
+- lwIP stack: TCP, UDP, IPv4, IPv6, PPP, Ethernet.
+- Network drivers for common NICs.
+
+### Userland
+- Musl libc for C standard library.
+- ELF64 loader, dynamic linking.
+- Shell and test programs as examples.
+
+---
+
+## Philosophy
+- Minimalism: only what is needed, nothing more.
+- Transparency: code and docs are the only "magic".
+- Hackability: easy to read, easy to change.
+- For those who want to learn, not just use.
+
+---
+
+## Documentation
+- [Contributing](docs/contributing.md)
+- [Install & Build](docs/install.md)
+
+---
+Repository: https://github.com/MelvinSGjr/EnochCore
